@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>传讯 · 新篇章</title>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#c5a47e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="传讯">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+</head>
+<body>
+
+<!-- 启动画面 -->
+<div id="splash" class="splash">
+    <div class="splash-content">
+        <i class="fas fa-heart"></i>
+        <span>点击任意位置继续</span>
+    </div>
+</div>
+
+<!-- 每日公告弹窗 -->
+<div id="daily-greeting" class="daily-greeting-modal">
+    <div class="greeting-card">
+        <div class="greeting-date" id="greeting-date"></div>
+        <div class="greeting-partner-status">
+            <div class="greeting-status-row">
+                <span class="greeting-status-label">💭 心情</span>
+                <span class="greeting-status-value" id="greeting-mood"></span>
+            </div>
+            <div class="greeting-status-row">
+                <span class="greeting-status-label">🌤️ 天气</span>
+                <span class="greeting-status-value" id="greeting-weather"></span>
+            </div>
+        </div>
+        <div class="greeting-message" id="greeting-message"></div>
+        <div class="greeting-wordcards" id="greeting-wordcards"></div>
+        <div class="greeting-total-days">
+            <span class="total-days-icon">📅</span>
+            <span>已相伴 </span>
+            <span class="total-days-num" id="greeting-total-days">0</span>
+            <span> 天</span>
+        </div>
+        <button id="greeting-checkin-btn" class="greeting-checkin-btn">✨ 开始今天吧 ✨</button>
+    </div>
+</div>
+
+<!-- 主视图 -->
+<div id="home-view" class="view active">
+    <div class="home-header">
+        <div class="home-time" id="home-time">--:--</div>
+    </div>
+    <div class="home-music-player" id="home-music-player">
+        <div class="home-record" id="home-record"></div>
+        <div class="home-music-info">
+            <div class="home-music-title" id="music-title">未播放</div>
+            <div class="home-music-sub" id="music-sub">点击播放</div>
+        </div>
+        <div class="home-music-controls">
+            <button id="home-play-pause"><i class="fas fa-play"></i></button>
+            <button id="home-next"><i class="fas fa-forward"></i></button>
+        </div>
+    </div>
+    <div class="home-decoration">
+        <div class="home-avatars">
+            <div class="home-avatar" id="home-avatar-my"><i class="fas fa-user"></i></div>
+            <div class="home-avatar" id="home-avatar-partner"><i class="fas fa-user"></i></div>
+        </div>
+        <div class="home-decoration-text" id="home-decoration-text">✨ 你是我最重要的决定 ✨</div>
+    </div>
+    <div class="home-app-grid" id="home-app-grid"></div>
+    <div class="home-anniversary-section" id="home-anniversary-section">
+        <div class="home-anniversary-title">💝 重要日</div>
+        <div class="home-anniversary-grid" id="home-anniversary-grid"></div>
+    </div>
+</div>
+
+<!-- 聊天视图 -->
+<div id="chat-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">聊天</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <button class="call-btn" id="chat-call-btn" title="视频通话"><i class="fas fa-video"></i></button>
+            <div class="more-menu">
+                <button class="more-btn" id="chat-more-btn"><i class="fas fa-plus"></i></button>
+                <div class="more-dropdown" id="chat-more-dropdown">
+                    <button id="more-send-image"><i class="fas fa-image"></i> 发送图片</button>
+                    <button id="more-batch"><i class="fas fa-layer-group"></i> 批量发送</button>
+                    <button id="more-select-export"><i class="fas fa-check-square"></i> 勾选导出</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="chat-container" id="chat-container"></div>
+    <div id="typing-indicator" class="typing-indicator" style="display: none;">
+        <span id="typing-indicator-name">对方</span> 正在输入<span class="typing-dots"></span>
+    </div>
+    <div id="batch-preview-container" class="batch-preview-container"></div>
+    <div id="reply-preview-container" style="display: none; padding: 0 12px;"></div>
+    <div class="input-area">
+        <textarea class="message-input" id="message-input" rows="1" placeholder="输入消息..."></textarea>
+        <button class="input-btn" id="send-btn"><i class="fas fa-paper-plane"></i></button>
+        <button class="input-btn secondary" id="continue-btn" title="让对方继续说"><i class="fas fa-comment-dots"></i></button>
+        <button class="input-btn secondary" id="poke-btn" title="表情互动"><i class="fas fa-smile"></i></button>
+    </div>
+</div>
+
+<!-- 设置视图 -->
+<div id="settings-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">设置</span>
+    </div>
+    <div class="settings-group">
+        <div class="settings-item" data-sub="appearance"><span class="settings-item-label">🎨 外观与主题</span><i class="fas fa-chevron-right settings-item-arrow"></i></div>
+        <div class="settings-item" data-sub="chat"><span class="settings-item-label">💬 聊天设置</span><i class="fas fa-chevron-right settings-item-arrow"></i></div>
+        <div class="settings-item" data-sub="sound"><span class="settings-item-label">🔊 音效与提醒</span><i class="fas fa-chevron-right settings-item-arrow"></i></div>
+        <div class="settings-item" data-sub="data"><span class="settings-item-label">💾 数据管理</span><i class="fas fa-chevron-right settings-item-arrow"></i></div>
+        <div class="settings-item" data-sub="music"><span class="settings-item-label">🎵 音乐播放器设置</span><i class="fas fa-chevron-right settings-item-arrow"></i></div>
+        <div class="settings-item" data-sub="ai"><span class="settings-item-label">🤖 场外援助</span><i class="fas fa-chevron-right settings-item-arrow"></i></div>
+        <div class="settings-item" data-sub="other"><span class="settings-item-label">📌 其他</span><i class="fas fa-chevron-right settings-item-arrow"></i></div>
+    </div>
+</div>
+
+<!-- 回复库视图 -->
+<div id="replies-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">回复库</span>
+    </div>
+    <div class="replies-container">
+        <div class="replies-sidebar">
+            <button class="replies-tab active" data-tab="cards">📝 字卡</button>
+            <button class="replies-tab" data-tab="pokes">👋 拍一拍</button>
+            <button class="replies-tab" data-tab="statuses">💬 状态</button>
+            <button class="replies-tab" data-tab="mottos">🏷️ 格言</button>
+            <button class="replies-tab" data-tab="intros">🎬 开场动画</button>
+            <button class="replies-tab" data-tab="mystickers">😊 表情(我)</button>
+            <button class="replies-tab" data-tab="partnerstickers">😊 表情(对方)</button>
+        </div>
+        <div class="replies-content">
+            <div id="cards-panel" class="replies-panel active">
+                <div class="panel-header">
+                    <input type="text" id="cards-search" placeholder="搜索字卡..." class="search-input">
+                    <button id="cards-add" class="btn-primary">+ 新增</button>
+                    <button id="cards-batch-add" class="btn-secondary">📋 批量添加</button>
+                    <button id="cards-group-manage" class="btn-secondary" style="margin-left:auto;">📁 分组管理</button>
+                </div>
+                <div id="cards-groups-container"></div>
+                <div id="cards-ungrouped-list" class="items-list" style="margin-top: 16px;"></div>
+            </div>
+            <div id="pokes-panel" class="replies-panel">
+                <div class="panel-header">
+                    <input type="text" id="pokes-search" placeholder="搜索拍一拍..." class="search-input">
+                    <button id="pokes-add" class="btn-primary">+ 新增</button>
+                    <button id="pokes-batch-add" class="btn-secondary">📋 批量添加</button>
+                </div>
+                <div id="pokes-list" class="items-list"></div>
+            </div>
+            <div id="statuses-panel" class="replies-panel">
+                <div class="panel-header">
+                    <input type="text" id="statuses-search" placeholder="搜索状态..." class="search-input">
+                    <button id="statuses-add" class="btn-primary">+ 新增</button>
+                    <button id="statuses-batch-add" class="btn-secondary">📋 批量添加</button>
+                </div>
+                <div id="statuses-list" class="items-list"></div>
+            </div>
+            <div id="mottos-panel" class="replies-panel">
+                <div class="panel-header">
+                    <input type="text" id="mottos-search" placeholder="搜索格言..." class="search-input">
+                    <button id="mottos-add" class="btn-primary">+ 新增</button>
+                    <button id="mottos-batch-add" class="btn-secondary">📋 批量添加</button>
+                </div>
+                <div id="mottos-list" class="items-list"></div>
+            </div>
+            <div id="intros-panel" class="replies-panel">
+                <div class="panel-header">
+                    <input type="text" id="intros-search" placeholder="搜索开场动画..." class="search-input">
+                    <button id="intros-add" class="btn-primary">+ 新增</button>
+                    <button id="intros-batch-add" class="btn-secondary">📋 批量添加</button>
+                </div>
+                <div id="intros-list" class="items-list"></div>
+            </div>
+            <div id="myStickers-panel" class="replies-panel">
+                <div class="panel-header">
+                    <button id="myStickers-upload" class="btn-primary">📷 上传表情包</button>
+                </div>
+                <div id="myStickers-list" class="stickers-grid"></div>
+            </div>
+            <div id="partnerStickers-panel" class="replies-panel">
+                <div class="panel-header">
+                    <button id="partnerStickers-upload" class="btn-primary">📷 上传表情包</button>
+                </div>
+                <div id="partnerStickers-list" class="stickers-grid"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 音乐播放器设置视图 -->
+<div id="music-settings-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">音乐播放器设置</span>
+    </div>
+    <div class="music-settings-container">
+        <div class="music-settings-section">
+            <h3>歌单管理</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                <button id="music-add-song" class="btn-primary">+ 添加歌曲</button>
+                <button id="music-import-playlist" class="btn-secondary">📥 导入歌单</button>
+                <button id="music-export-playlist" class="btn-secondary">📤 导出歌单</button>
+            </div>
+            <div id="music-playlist-container" style="max-height: 400px; overflow-y: auto;">
+                <!-- 歌单列表将动态渲染 -->
+            </div>
+        </div>
+        <div class="music-settings-section">
+            <h3>播放设置</h3>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <span>播放模式：</span>
+                <button id="music-mode-sequence" class="mode-btn active" data-mode="sequence">🔁 顺序</button>
+                <button id="music-mode-single" class="mode-btn" data-mode="single">🔂 单曲</button>
+                <button id="music-mode-shuffle" class="mode-btn" data-mode="shuffle">🎲 随机</button>
+            </div>
+            <div style="margin-top: 12px;">
+                <label>默认音量：</label>
+                <input type="range" id="music-volume" min="0" max="100" value="70" style="width: 200px;">
+                <span id="music-volume-value">70%</span>
+            </div>
+        </div>
+        <div class="music-settings-section">
+            <h3>专辑封面</h3>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div id="cover-preview" style="width: 80px; height: 80px; background: var(--border-color); border-radius: 12px; overflow: hidden;">
+                    <img id="cover-preview-img" src="" style="width:100%; height:100%; object-fit:cover; display: none;">
+                    <i id="cover-preview-icon" class="fas fa-music" style="font-size: 32px; width:100%; height:100%; display: flex; align-items: center; justify-content: center;"></i>
+                </div>
+                <button id="music-upload-cover" class="btn-secondary">上传封面</button>
+                <button id="music-clear-cover" class="btn-secondary">清除封面</button>
+            </div>
+        </div>
+        <div class="music-settings-section">
+            <h3>播放器背景</h3>
+            <p class="settings-hint">替换主页播放器的背景图片</p>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div id="player-bg-preview" style="width: 80px; height: 50px; background: var(--border-color); border-radius: 8px; overflow: hidden;">
+                    <img id="player-bg-preview-img" src="" style="width:100%; height:100%; object-fit:cover; display: none;">
+                    <i id="player-bg-preview-icon" class="fas fa-image" style="font-size: 20px; width:100%; height:100%; display: flex; align-items: center; justify-content: center; color: var(--text-secondary);"></i>
+                </div>
+                <button id="music-upload-player-bg" class="btn-secondary">上传背景</button>
+                <button id="music-clear-player-bg" class="btn-secondary">清除</button>
+            </div>
+        </div>
+        <div class="music-settings-section">
+            <h3>播放器外框</h3>
+            <p class="settings-hint">装饰框浮在播放器上方，需中心透明</p>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div id="player-frame-preview" style="width: 80px; height: 50px; background: var(--border-color); border-radius: 8px; overflow: hidden;">
+                    <img id="player-frame-preview-img" src="" style="width:100%; height:100%; object-fit:cover; display: none;">
+                    <i id="player-frame-preview-icon" class="fas fa-border-all" style="font-size: 20px; width:100%; height:100%; display: flex; align-items: center; justify-content: center; color: var(--text-secondary);"></i>
+                </div>
+                <button id="music-upload-player-frame" class="btn-secondary">上传外框</button>
+                <button id="music-clear-player-frame" class="btn-secondary">清除</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 聊天记录与统计视图 -->
+<div id="stats-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">聊天记录与统计</span>
+    </div>
+    <div class="stats-container">
+        <div class="stats-tabs">
+            <button class="stats-tab active" data-tab="overview">📊 概览</button>
+            <button class="stats-tab" data-tab="words">🔤 高频词</button>
+            <button class="stats-tab" data-tab="wordcloud">☁️ 词云</button>
+            <button class="stats-tab" data-tab="search">🔍 搜索</button>   <!-- 新增 -->
+        </div>
+        <div class="stats-panel active" id="stats-overview"></div>
+        <div class="stats-panel" id="stats-words"></div>
+        <div class="stats-panel" id="stats-wordcloud"></div>
+        <div class="stats-panel" id="stats-search">   <!-- 新增 -->
+            <div class="search-container">
+                <div class="search-row">
+                    <input type="text" id="search-keyword" placeholder="输入关键词..." class="search-input">
+                    <button id="search-btn" class="btn-primary">搜索</button>
+                </div>
+                <div class="search-row">
+                    <label>日期范围：</label>
+                    <input type="date" id="search-date-from">
+                    <span>至</span>
+                    <input type="date" id="search-date-to">
+                    <button id="search-date-clear" class="btn-secondary">清除日期</button>
+                </div>
+                <div id="search-results" class="search-results"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 外观与主题视图 -->
+<div id="appearance-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">外观与主题</span>
+    </div>
+    <div class="appearance-container">
+        <div class="appearance-section">
+            <div class="section-title">主题配色</div>
+            <div class="theme-picker" id="theme-picker">
+                <button class="theme-btn" data-theme="gold" style="background:#c5a47e;">金</button>
+                <button class="theme-btn" data-theme="blue" style="background:#7FA6CD;">蓝</button>
+                <button class="theme-btn" data-theme="purple" style="background:#BB9EC7;">紫</button>
+                <button class="theme-btn" data-theme="green" style="background:#7BC8A4;">绿</button>
+                <button class="theme-btn" data-theme="pink" style="background:#F4A6B3;">粉</button>
+                <button class="theme-btn" data-theme="black-white" style="background:#333;">黑白</button>
+                <button class="theme-btn" data-theme="pastel" style="background:#A8D8EA;">柔蓝</button>
+                <button class="theme-btn" data-theme="sunset" style="background:#FF9A8B;">夕阳</button>
+                <button class="theme-btn" data-theme="forest" style="background:#7BA05B;">森林</button>
+                <button class="theme-btn" data-theme="ocean" style="background:#4A90E2;">深蓝</button>
+            </div>
+        </div>
+        <div class="appearance-section">
+            <div class="section-title">深色模式</div>
+            <div class="toggle-row">
+                <span>夜间模式</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="dark-mode-toggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+        <div class="appearance-section">
+            <div class="section-title">字体大小</div>
+            <div class="slider-row">
+                <span>12px</span>
+                <input type="range" id="font-size-slider" min="12" max="24" value="16" step="1">
+                <span id="font-size-value">16px</span>
+            </div>
+        </div>
+        <div class="appearance-section">
+            <div class="section-title">聊天背景</div>
+            <button id="chat-bg-btn" class="btn-secondary">更换背景</button>
+            <button id="reset-chat-bg" class="btn-secondary" style="margin-left: 8px;">恢复默认</button>
+        </div>
+        <div class="appearance-section">
+            <div class="section-title">主视图背景</div>
+            <button id="home-bg-btn" class="btn-secondary">更换背景</button>
+            <button id="reset-home-bg-btn" class="btn-secondary" style="margin-left: 8px;">恢复默认</button>
+            <p class="settings-hint">更换主视图的背景图片</p>
+        </div>
+        <div class="appearance-section">
+            <div class="section-title">图标外观</div>
+            <div class="setting-item">
+                <span>圆角大小</span>
+                <input type="range" id="icon-radius-slider" min="4" max="28" value="18">
+                <span id="icon-radius-value">18px</span>
+            </div>
+            <div class="setting-item">
+                <span>透明度</span>
+                <input type="range" id="icon-opacity-slider" min="30" max="100" value="100">
+                <span id="icon-opacity-value">100%</span>
+            </div>
+            <div class="setting-item">
+                <span>边框粗细</span>
+                <input type="range" id="icon-border-slider" min="0" max="4" value="0">
+                <span id="icon-border-value">0px</span>
+            </div>
+            <div class="setting-item">
+                <span>边框颜色</span>
+                <input type="color" id="icon-border-color" value="#c5a47e">
+            </div>
+        </div>
+        <div class="appearance-section">
+            <div class="section-title">图标框</div>
+            <div class="setting-item">
+                <span>图标框图片</span>
+                <button id="icon-frame-upload" class="btn-secondary" style="font-size:12px;">📷 选择图片</button>
+                <button id="icon-frame-reset" class="btn-secondary" style="font-size:12px;margin-left:4px;">重置</button>
+            </div>
+            <div id="icon-frame-preview" style="width:56px;height:56px;margin-top:8px;border-radius:4px;overflow:hidden;background:var(--border-color);">
+                <img id="icon-frame-preview-img" style="width:100%;height:100%;object-fit:cover;display:none;">
+            </div>
+        </div>
+        <div class="appearance-section">
+            <div class="section-title">图标图案</div>
+            <p class="settings-hint">替换主页网格中的图标为自定义图片</p>
+            <div class="setting-item">
+                <span>选择图标</span>
+                <select id="custom-icon-select" style="flex:1;padding:6px 8px;border-radius:8px;border:1px solid var(--border-color);background:var(--primary-bg);color:var(--text-primary);font-size:13px;"></select>
+            </div>
+            <div class="setting-item">
+                <span>图标图片</span>
+                <button id="custom-icon-upload" class="btn-secondary" style="font-size:12px;">📷 上传</button>
+                <button id="custom-icon-reset" class="btn-secondary" style="font-size:12px;margin-left:4px;">重置当前</button>
+                <button id="custom-icon-reset-all" class="btn-secondary" style="font-size:12px;margin-left:4px;">全部重置</button>
+            </div>
+            <div id="custom-icon-preview" style="width:56px;height:56px;margin-top:8px;border-radius:4px;overflow:hidden;background:var(--border-color);">
+                <img id="custom-icon-preview-img" style="width:100%;height:100%;object-fit:cover;display:none;">
+            </div>
+            <div id="custom-icon-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
+        </div>
+        <div class="appearance-section">
+            <div class="section-title">头像框</div>
+            <div class="setting-item">
+                <span>我的头像框</span>
+                <button id="avatar-frame-my-upload" class="btn-secondary" style="font-size:12px;">📷 选择图片</button>
+                <button id="avatar-frame-my-reset" class="btn-secondary" style="font-size:12px;margin-left:4px;">重置</button>
+            </div>
+            <div class="setting-item">
+                <span>对方头像框</span>
+                <button id="avatar-frame-partner-upload" class="btn-secondary" style="font-size:12px;">📷 选择图片</button>
+                <button id="avatar-frame-partner-reset" class="btn-secondary" style="font-size:12px;margin-left:4px;">重置</button>
+            </div>
+        </div>
+        <div class="appearance-section">
+            <div class="section-title">唱片装饰</div>
+            <div class="setting-item">
+                <span>预设唱片</span>
+                <div class="record-presets" id="record-presets">
+                    <button class="record-preset-btn active" data-record="classic" style="background:radial-gradient(circle at 50% 50%, #333 15%, #111 25%, #444 26%, #222 28%, #c5a47e 29%, #a07850 65%, #111 66%);width:40px;height:40px;border-radius:50%;border:2px solid var(--border-color);cursor:pointer;"></button>
+                    <button class="record-preset-btn" data-record="rose" style="background:radial-gradient(circle at 50% 50%, #333 15%, #111 25%, #444 26%, #222 28%, #e8b4b8 29%, #d4858b 65%, #111 66%);width:40px;height:40px;border-radius:50%;border:2px solid var(--border-color);cursor:pointer;"></button>
+                    <button class="record-preset-btn" data-record="blue" style="background:radial-gradient(circle at 50% 50%, #333 15%, #111 25%, #444 26%, #222 28%, #7fa6cd 29%, #4a80b0 65%, #111 66%);width:40px;height:40px;border-radius:50%;border:2px solid var(--border-color);cursor:pointer;"></button>
+                    <button class="record-preset-btn" data-record="pink" style="background:radial-gradient(circle at 50% 50%, #333 15%, #111 25%, #444 26%, #222 28%, #f4a6b3 29%, #e87888 65%, #111 66%);width:40px;height:40px;border-radius:50%;border:2px solid var(--border-color);cursor:pointer;"></button>
+                    <button class="record-preset-btn" data-record="green" style="background:radial-gradient(circle at 50% 50%, #333 15%, #111 25%, #444 26%, #222 28%, #7bc8a4 29%, #4ea878 65%, #111 66%);width:40px;height:40px;border-radius:50%;border:2px solid var(--border-color);cursor:pointer;"></button>
+                </div>
+            </div>
+            <div class="setting-item">
+                <span>自定义唱片</span>
+                <button id="record-custom-upload" class="btn-secondary" style="font-size:12px;">📷 上传图片</button>
+                <button id="record-custom-reset" class="btn-secondary" style="font-size:12px;margin-left:4px;">重置</button>
+            </div>
+            <p class="settings-hint">🎵 推荐上传 200×200px 正方形图片（如圆形唱片图），播放时自动旋转</p>
+        </div>
+        <div class="appearance-section">
+            <div class="section-title">启动画面</div>
+            <p class="settings-hint">应用启动时显示的图片，下次启动生效</p>
+            <div class="setting-item">
+                <button id="upload-splash-btn" class="btn-secondary">上传图片</button>
+                <button id="reset-splash-btn" class="btn-secondary" style="margin-left: 8px;">恢复默认</button>
+            </div>
+            <div id="splash-preview" style="margin-top: 8px; width: 100%; max-width: 200px; border-radius: 12px; overflow: hidden; background: var(--border-color);">
+                <img id="splash-preview-img" src="" style="width:100%; display: none;">
+                <div id="splash-preview-placeholder" style="height: 100px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary);">未设置图片</div>
+            </div>
+        </div>
+        <div class="appearance-section">
+            <div class="section-title">素材库</div>
+            <p class="settings-hint">上传素材后可快捷设为聊天或主视图背景</p>
+            <div style="display:flex; gap:8px; margin-bottom:10px;">
+                <button id="material-upload-btn" class="btn-primary">📷 上传素材</button>
+            </div>
+            <div id="material-gallery" class="material-gallery"></div>
+        </div>
+        <div class="appearance-section">
+            <div class="section-title">装饰文字</div>
+            <div class="setting-item">
+                <input type="text" id="deco-text-input" class="deco-text-input" placeholder="请输入装饰文字">
+                <button id="save-deco-text" class="btn-primary" style="margin-left: 8px;">保存</button>
+            </div>
+        </div>
+        <div class="appearance-section">
+            <div class="section-title">气泡样式</div>
+            <div class="bubble-styles">
+                <button class="bubble-style-btn" data-style="standard">标准</button>
+                <button class="bubble-style-btn" data-style="rounded">圆角</button>
+                <button class="bubble-style-btn" data-style="rounded-large">大圆角</button>
+                <button class="bubble-style-btn" data-style="square">方形</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 聊天设置视图 -->
+<div id="chat-settings-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">聊天设置</span>
+    </div>
+    <div class="settings-container">
+        <!-- 回复速度 -->
+        <div class="settings-group">
+            <div class="group-title">回复速度</div>
+            <div class="setting-item">
+                <span>最短等待 (ms)</span>
+                <input type="range" id="delay-min" min="1000" max="10000" step="500" value="3000">
+                <span id="delay-min-value">3s</span>
+            </div>
+            <div class="setting-item">
+                <span>最长等待 (ms)</span>
+                <input type="range" id="delay-max" min="1000" max="20000" step="500" value="7000">
+                <span id="delay-max-value">7s</span>
+            </div>
+        </div>
+        <!-- 已读回执 -->
+        <div class="settings-group">
+            <div class="group-title">已读回执</div>
+            <div class="setting-item">
+                <span>启用已读回执</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="read-receipts-toggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item" id="read-receipt-style-row" style="display: none;">
+                <span>回执样式</span>
+                <div>
+                    <button class="style-btn" data-style="icon">图标 ✓✓</button>
+                    <button class="style-btn" data-style="text">文字 “已读”</button>
+                </div>
+            </div>
+        </div>
+        <!-- 已读不回 -->
+        <div class="settings-group">
+            <div class="group-title">已读不回</div>
+            <div class="setting-item">
+                <span>允许已读不回</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="read-no-reply-toggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item" id="read-no-reply-chance-row" style="display: none;">
+                <span>不回复概率</span>
+                <input type="range" id="read-no-reply-chance" min="0" max="100" step="5" value="20">
+                <span id="chance-value">20%</span>
+            </div>
+        </div>
+        <!-- 连发设置 -->
+        <div class="settings-group">
+            <div class="group-title">对方连发设置</div>
+            <div class="setting-item">
+                <span>连发最大条数</span>
+                <input type="range" id="reply-burst-max" min="1" max="10" step="1" value="1">
+                <span id="burst-max-value">1 条</span>
+            </div>
+        </div>
+        <!-- 主动发送 -->
+        <div class="settings-group">
+            <div class="group-title">主动发送消息</div>
+            <div class="setting-item">
+                <span>主动向对方发送消息</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="auto-send-toggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item" id="auto-send-interval-row" style="display: none;">
+                <span>间隔 (分钟)</span>
+                <input type="range" id="auto-send-interval" min="1" max="60" step="1" value="5">
+                <span id="interval-value">5 分钟</span>
+            </div>
+        </div>
+        <!-- 其他 -->
+        <div class="settings-group">
+            <div class="group-title">其他</div>
+            <div class="setting-item">
+                <span>正在输入指示器</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="typing-indicator-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span>表情混入消息</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="emoji-mix-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span>引用回复功能</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="reply-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 音效与提醒视图 -->
+<div id="sound-settings-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">音效与提醒</span>
+    </div>
+    <div class="settings-container">
+        <div class="settings-group">
+            <div class="group-title">消息音效</div>
+            <div class="setting-item">
+                <span>启用音效</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="sound-enabled-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span>音量</span>
+                <input type="range" id="sound-volume-slider" min="0" max="100" value="70">
+                <span id="sound-volume-value">70%</span>
+            </div>
+        </div>
+        <div class="settings-group">
+            <div class="group-title">音效自定义</div>
+            <div class="sound-scene" data-scene="my_send">
+                <div>我发送消息的音效</div>
+                <select class="sound-preset" data-scene="my_send">
+                    <option value="default">默认提示音</option>
+                    <option value="soft">柔和</option>
+                    <option value="low">低沉</option>
+                    <option value="kakaotalk">KakaoTalk</option>
+                    <option value="custom">自定义URL</option>
+                    <option value="none">无音效</option>
+                </select>
+                <input type="text" class="sound-url" data-scene="my_send" placeholder="自定义音频URL (mp3/ogg)" style="display:none;">
+                <button class="test-sound" data-scene="my_send">试听</button>
+            </div>
+            <div class="sound-scene" data-scene="partner_message">
+                <div>对方发来消息的音效</div>
+                <select class="sound-preset" data-scene="partner_message">
+                    <option value="default">默认提示音</option>
+                    <option value="soft">柔和</option>
+                    <option value="low">低沉</option>
+                    <option value="kakaotalk">KakaoTalk</option>
+                    <option value="custom">自定义URL</option>
+                    <option value="none">无音效</option>
+                </select>
+                <input type="text" class="sound-url" data-scene="partner_message" placeholder="自定义音频URL" style="display:none;">
+                <button class="test-sound" data-scene="partner_message">试听</button>
+            </div>
+            <div class="sound-scene" data-scene="my_poke">
+                <div>我拍一拍的音效</div>
+                <select class="sound-preset" data-scene="my_poke">
+                    <option value="default">默认提示音</option>
+                    <option value="soft">柔和</option>
+                    <option value="low">低沉</option>
+                    <option value="kakaotalk">KakaoTalk</option>
+                    <option value="custom">自定义URL</option>
+                    <option value="none">无音效</option>
+                </select>
+                <input type="text" class="sound-url" data-scene="my_poke" placeholder="自定义音频URL" style="display:none;">
+                <button class="test-sound" data-scene="my_poke">试听</button>
+            </div>
+            <div class="sound-scene" data-scene="partner_poke">
+                <div>对方拍一拍的音效</div>
+                <select class="sound-preset" data-scene="partner_poke">
+                    <option value="default">默认提示音</option>
+                    <option value="soft">柔和</option>
+                    <option value="low">低沉</option>
+                    <option value="kakaotalk">KakaoTalk</option>
+                    <option value="custom">自定义URL</option>
+                    <option value="none">无音效</option>
+                </select>
+                <input type="text" class="sound-url" data-scene="partner_poke" placeholder="自定义音频URL" style="display:none;">
+                <button class="test-sound" data-scene="partner_poke">试听</button>
+            </div>
+        </div>
+        <div class="settings-group">
+            <div class="group-title">系统通知</div>
+            <div class="setting-item">
+                <span>新消息通知</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="notif-enabled-toggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-item" id="notif-status" style="font-size: 12px; color: var(--text-secondary);">
+                未授权，点击开关请求权限
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 数据管理视图 -->
+<div id="data-settings-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">数据管理</span>
+    </div>
+    <div class="settings-container">
+        <div class="settings-group">
+            <div class="group-title">存储用量</div>
+            <div class="storage-card">
+                <div><span>聊天记录:</span> <span id="storage-messages">0</span> 条</div>
+                <div><span>设置项:</span> <span id="storage-settings">0</span> 项</div>
+                <div><span>图片/媒体:</span> <span id="storage-media">0</span> KB</div>
+                <div class="storage-bar"><div id="storage-bar-fill" class="storage-fill" style="width:0%"></div></div>
+                <div><span>总占用:</span> <span id="storage-total">0</span> KB</div>
+            </div>
+        </div>
+        <div class="settings-group">
+            <div class="group-title">全量备份</div>
+            <button id="full-backup-btn" class="btn-primary" style="width:100%; margin-bottom:8px;">📦 导出备份</button>
+            <button id="full-restore-btn" class="btn-primary" style="width:100%;">📂 导入备份</button>
+            <p class="settings-hint">备份包含所有数据模块，可选择导出/导入哪些模块。</p>
+        </div>
+        <div class="settings-group">
+            <div class="group-title">回复库导入/导出</div>
+            <button id="export-replies-btn" class="btn-primary" style="width:48%; margin-right:4%;">📤 导出回复库</button>
+            <button id="import-replies-btn" class="btn-primary" style="width:48%;">📥 导入回复库</button>
+            <p class="settings-hint">导出/导入字卡、拍一拍、状态、格言、开场动画等回复库数据。</p>
+        </div>
+        <div class="settings-group">
+            <div class="group-title">聊天记录单独管理</div>
+            <button id="export-chat-btn" class="btn-secondary" style="width:48%; margin-right:4%;">导出聊天记录</button>
+            <button id="import-chat-btn" class="btn-secondary" style="width:48%;">导入聊天记录</button>
+            <p class="settings-hint">仅消息记录，不含设置、字卡等。</p>
+        </div>
+        <div class="settings-group">
+            <div class="group-title">危险操作</div>
+            <button id="clear-current-chat-btn" class="btn-danger" style="width:100%; margin-bottom:8px;">⚠️ 清除当前会话消息</button>
+            <button id="reset-all-data-btn" class="btn-danger" style="width:100%;">🔥 重置所有数据</button>
+            <p class="settings-hint warning">清除当前会话不可恢复，重置所有数据将清空全部内容并刷新页面。</p>
+        </div>
+        <div class="settings-group">
+            <div class="group-title">聊天记录单独管理</div>
+            <button id="export-chat-date-btn" class="btn-secondary" style="width:48%; margin-right:4%;">📅 按日期导出</button>
+            <button id="import-chat-btn" class="btn-secondary" style="width:48%;">📂 导入聊天记录</button>
+            <p class="settings-hint">按日期导出为TXT文件，导入为JSON格式。</p>
+        </div>
+    </div>
+</div>
+<!-- 其他设置视图 -->
+<div id="other-settings-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">其他</span>
+    </div>
+    <div class="settings-container">
+        <div class="settings-group">
+            <div class="group-title">传讯专属画廊</div>
+            <div class="setting-item" id="gallery-link" style="cursor: pointer;">
+                <span>🎨 点击访问素材画廊</span>
+                <i class="fas fa-external-link-alt"></i>
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px; padding-left: 4px;">
+                （后续自行替换为你的素材网站链接）
+            </div>
+        </div>
+        <div class="settings-group">
+            <div class="group-title">关于与声明</div>
+            <div class="setting-item" id="about-link" style="cursor: pointer;">
+                <span>📄 查看声明与致谢</span>
+                <i class="fas fa-chevron-right"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 关于与声明的模态框（弹窗） -->
+<div id="about-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-title">
+            <i class="fas fa-scroll"></i><span>关于 & 声明</span>
+        </div>
+        <div id="about-content" style="font-size: 14px; line-height: 1.8; color: var(--text-secondary); max-height: 50vh; overflow-y: auto; padding-right: 10px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h3 style="color: var(--accent-color); margin-bottom: 10px;">传讯 · 与你</h3>
+                <p style="font-size: 12px; opacity: 0.7;">版本 1.0.0</p>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <p><strong>开发者：</strong> Z.</p>
+                <p><strong>开源协议：</strong> MIT License</p>
+                <p><strong>项目仓库：</strong> 暂无公开（个人项目）</p>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <strong>当前版本功能：</strong>
+                <ul style="margin-top: 6px; padding-left: 20px;">
+                    <li>聊天</li>
+                    <li>自定义回复库</li>
+                    <li>消息引用、收藏、批量发送</li>
+                    <li>消息统计、高频词、词云</li>
+                    <li>音乐播放器（歌单管理、封面、播放模式）</li>
+                    <li>外观主题（10种预设 + 深色模式 + 字体大小 + 气泡样式）</li>
+                    <li>聊天背景、启动画面自定义</li>
+                    <li>音效提醒</li>
+                    <li>数据备份/恢复</li>
+                    <li>睡眠记录、碎碎念、电子宠物</li>
+                    <li>心晴手账、信封投递、重要日、占卜、抉择</li>
+                </ul>
+            </div>
+            <div style="text-align: center; margin-top: 20px; padding-top: 12px; border-top: 1px dashed var(--border-color); font-style: italic; color: var(--accent-color);">
+                “由来已久，无可救药.” ✨
+            </div>
+        </div>
+        <div class="modal-buttons" style="margin-top: 20px;">
+            <button class="modal-btn modal-btn-primary" id="close-about-modal" style="width: 100%;">关闭</button>
+        </div>
+    </div>
+</div>
+<!-- 睡眠记录视图 -->
+<div id="sleep-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">睡眠记录</span>
+    </div>
+    <div class="sleep-container">
+        <div class="sleep-control">
+            <button id="sleep-mode-btn" class="btn-primary">🌙 开始晚安模式</button>
+        </div>
+        <div class="sleep-history">
+            <h3>历史记录</h3>
+            <div id="sleep-history-list" class="history-list"></div>
+        </div>
+    </div>
+</div>
+<!-- 碎碎念视图 -->
+<div id="whisper-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">碎碎念</span>
+    </div>
+    <div class="whisper-container">
+        <div id="whisper-list" class="whisper-list"></div>
+        <div class="whisper-input-area">
+            <textarea id="whisper-textarea" rows="2" placeholder="记录此刻的思绪..."></textarea>
+            <button id="whisper-send-btn" class="btn-primary">📌 记录</button>
+        </div>
+    </div>
+</div>
+<!-- 信箱视图 -->
+<div id="envelope-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">信箱</span>
+    </div>
+    <div class="envelope-container">
+        <div class="envelope-tabs">
+            <button class="envelope-tab active" data-tab="outbox">📤 寄出的信</button>
+            <button class="envelope-tab" data-tab="inbox">📥 收到的信</button>
+        </div>
+        <div id="envelope-outbox" class="envelope-panel active">
+            <div id="outbox-list" class="envelope-list"></div>
+            <button id="new-letter-btn" class="btn-primary" style="width: calc(100% - 24px); margin: 12px;">✍️ 写新信</button>
+        </div>
+        <div id="envelope-inbox" class="envelope-panel" style="display: none;">
+            <div id="inbox-list" class="envelope-list"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 写信/读信模态框 -->
+<div id="letter-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-title">
+            <i class="fas fa-envelope"></i>
+            <span>写一封信</span>
+        </div>
+        <textarea id="letter-content" rows="8" placeholder="写下你想说的话..." style="width:100%; padding:14px; border-radius:12px; border:1px solid var(--border-color); background:var(--primary-bg); color:var(--text-primary); font-size:14px; line-height:1.8; resize:vertical; font-family:inherit;"></textarea>
+        <div class="modal-buttons">
+            <button id="letter-cancel" class="modal-btn modal-btn-secondary">取消</button>
+            <button id="letter-send" class="modal-btn modal-btn-primary">寄出</button>
+        </div>
+    </div>
+</div>
+
+<!-- 回信查看模态框 -->
+<div id="reply-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-title">
+            <i class="fas fa-envelope-open-text"></i>
+            <span>回信</span>
+        </div>
+        <div id="reply-content" style="white-space: pre-wrap; margin: 16px 0; padding: 16px; line-height: 1.8; background: rgba(var(--accent-color-rgb), 0.04); border-radius: 12px; font-size: 14px; border-left: 3px solid var(--accent-color);"></div>
+        <div class="modal-buttons">
+            <button id="reply-close" class="modal-btn modal-btn-primary">关闭</button>
+        </div>
+    </div>
+</div>
+<!-- 占卜视图 -->
+<div id="fortune-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">✨ 占卜 ✨</span>
+    </div>
+    
+    <!-- 步骤1：选择占卜类型 -->
+    <div id="fortune-selection-panel" class="fortune-panel active">
+        <div class="fortune-type-cards">
+            <div id="fortune-lenormand" class="fortune-type-option">
+                <i class="fas fa-layer-group"></i>
+                <div class="type-name">雷诺曼 Lenormand</div>
+                <div class="type-desc">36张符号牌 · 直白清晰</div>
+            </div>
+            <div id="fortune-tarot" class="fortune-type-option">
+                <i class="fas fa-star-of-life"></i>
+                <div class="type-name">塔罗 Tarot</div>
+                <div class="type-desc">78张 · 深邃洞见</div>
+            </div>
+        </div>
+        <button id="fortune-next-btn" class="btn-primary fortune-next">下一步 →</button>
+    </div>
+    
+    <!-- 步骤2：输入问题 & 选择张数 -->
+    <div id="fortune-quiz-panel" class="fortune-panel" style="display: none;">
+        <div class="fortune-quiz-container">
+            <div class="fortune-question-box">
+                <label>🔮 你的问题</label>
+                <textarea id="fortune-question" rows="3" placeholder="例如：我今年的感情运势如何？&#10;工作上的这个选择是否正确？&#10;我想知道 TA 对我的感觉..."></textarea>
+            </div>
+            <div class="fortune-card-count-box">
+                <label>🎴 抽取牌数</label>
+                <select id="fortune-card-count" class="fortune-select"></select>
+                <div id="fortune-card-count-hint" class="fortune-hint">💡 三张牌：快速得到问题答案</div>
+            </div>
+            <div class="fortune-quiz-buttons">
+                <button id="fortune-quiz-cancel" class="btn-secondary">返回</button>
+                <button id="fortune-quiz-start" class="btn-primary">✨ 开始占卜</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 步骤3：显示结果 -->
+    <div id="fortune-result-panel" class="fortune-panel" style="display: none;">
+        <div id="fortune-result-cards" class="fortune-result-cards"></div>
+        <div class="fortune-result-buttons">
+            <button id="fortune-ai-assist" class="fortune-ai-btn">
+                <i class="fas fa-robot"></i> AI 辅助解牌
+            </button>
+            <div class="result-nav-buttons">
+                <button id="fortune-result-back" class="btn-secondary">← 返回</button>
+                <button id="fortune-result-new" class="btn-primary">新的占卜 →</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 抉择助手视图 -->
+<div id="decision-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">🎲 抉择助手</span>
+    </div>
+    <div class="decision-container">
+        <div class="decision-tabs">
+            <button class="decision-tab active" data-mode="coin">🪙 抛硬币 · 是否</button>
+            <button class="decision-tab" data-mode="draw">📜 随机抽签</button>
+        </div>
+
+        <!-- 抛硬币模式 -->
+        <div id="coin-mode" class="decision-mode active">
+            <div class="decision-question-box">
+                <label>🤔 你的问题</label>
+                <textarea id="coin-question" rows="2" placeholder="例如：今天应该出门吗？&#10;这个决定是对的吗？"></textarea>
+            </div>
+            <button id="coin-decision-btn" class="btn-primary decision-action-btn">
+                <i class="fas fa-coins"></i> 抛硬币决定
+            </button>
+            <div id="coin-result" class="decision-result">
+                <div class="result-icon">❓</div>
+                <div class="result-text">点击抛硬币</div>
+            </div>
+        </div>
+
+        <!-- 抽签模式 -->
+        <div id="draw-mode" class="decision-mode" style="display: none;">
+            <div class="decision-options-box">
+                <label>📝 抽签选项（每行一个，或逗号分隔）</label>
+                <textarea id="draw-options" rows="4" placeholder="默认示例：&#10;顺其自然&#10;主动出击&#10;再等等看&#10;询问他人"></textarea>
+                <div class="draw-presets">
+                    <span>快速预设：</span>
+                    <button class="preset-btn" data-preset="love">❤️ 感情</button>
+                    <button class="preset-btn" data-preset="work">💼 工作</button>
+                    <button class="preset-btn" data-preset="luck">🍀 幸运签</button>
+                </div>
+            </div>
+            <button id="draw-decision-btn" class="btn-primary decision-action-btn">
+                <i class="fas fa-dice-d6"></i> 随机抽一签
+            </button>
+            <div id="draw-result" class="decision-result">
+                <div class="result-icon">🎴</div>
+                <div class="result-text">点击抽签</div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 重要日/纪念日视图 -->
+<div id="anniversary-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">💝 重要日</span>
+    </div>
+    <div class="anniversary-container">
+        <div class="anniversary-add-bar">
+            <button id="anniversary-add-btn" class="btn-primary">+ 添加重要日</button>
+        </div>
+        <div id="anniversary-list" class="anniversary-list"></div>
+    </div>
+</div>
+
+<!-- 重要日添加/编辑模态框 -->
+<div id="anniversary-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 360px;">
+        <div class="modal-title">
+            <i class="fas fa-heart"></i>
+            <span id="anniversary-modal-title">添加重要日</span>
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size:13px; color:var(--text-secondary); display:block; margin-bottom:4px;">名称</label>
+            <input type="text" id="anniversary-name" placeholder="例如：恋爱纪念日" style="width:100%; padding:8px 12px; border:1px solid var(--border-color); border-radius:12px; background:var(--primary-bg); color:var(--text-primary);">
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size:13px; color:var(--text-secondary); display:block; margin-bottom:4px;">日期</label>
+            <input type="date" id="anniversary-date" style="width:100%; padding:8px 12px; border:1px solid var(--border-color); border-radius:12px; background:var(--primary-bg); color:var(--text-primary);">
+        </div>
+        <div style="margin-bottom:16px;">
+            <label style="font-size:13px; color:var(--text-secondary); display:block; margin-bottom:4px;">类型</label>
+            <div style="display:flex; gap:10px;">
+                <button class="anniversary-type-btn active" data-type="countdown" id="anniversary-type-countdown">⏳ 倒数日</button>
+                <button class="anniversary-type-btn" data-type="countup" id="anniversary-type-countup">📅 正数日</button>
+            </div>
+        </div>
+        <input type="hidden" id="anniversary-edit-id" value="">
+        <div class="modal-buttons">
+            <button id="anniversary-cancel" class="modal-btn modal-btn-secondary">取消</button>
+            <button id="anniversary-save" class="modal-btn modal-btn-primary">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 场外援助设置视图 -->
+<div id="ai-settings-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">🤖 场外援助设置</span>
+    </div>
+    <div class="settings-container">
+        <div class="settings-group">
+            <div class="group-title">API 配置</div>
+            <div class="setting-item">
+                <span>API Key</span>
+                <input type="password" id="ai-api-key" placeholder="sk-..." style="width:60%; padding:6px; border-radius:8px; border:1px solid var(--border-color); background:var(--primary-bg); color:var(--text-primary);">
+            </div>
+            <div class="setting-item">
+                <span>API 地址</span>
+                <input type="text" id="ai-api-url" value="https://api.deepseek.com/v1/chat/completions" style="width:60%; padding:6px; border-radius:8px; border:1px solid var(--border-color); background:var(--primary-bg); color:var(--text-primary); font-size:11px;">
+            </div>
+            <div class="setting-item">
+                <span>模型</span>
+                <select id="ai-model" style="width:60%; padding:6px; border-radius:8px; border:1px solid var(--border-color); background:var(--primary-bg); color:var(--text-primary);">
+                    <option value="deepseek-chat">deepseek-chat</option>
+                    <option value="deepseek-reasoner">deepseek-reasoner</option>
+                </select>
+            </div>
+        </div>
+        <div class="settings-group">
+            <div class="group-title">对话参数</div>
+            <div class="setting-item">
+                <span>系统提示词</span>
+            </div>
+            <textarea id="ai-system-prompt" rows="3" placeholder="你是一个友好的AI助手..." style="width:100%; padding:8px; border-radius:8px; border:1px solid var(--border-color); background:var(--primary-bg); color:var(--text-primary); font-family:inherit; resize:vertical;"></textarea>
+            <div class="setting-item" style="margin-top:10px;">
+                <span>Temperature</span>
+                <input type="range" id="ai-temperature" min="0" max="200" value="70">
+                <span id="ai-temp-value">0.7</span>
+            </div>
+            <div class="setting-item">
+                <span>最大 Token</span>
+                <input type="range" id="ai-max-tokens" min="100" max="8000" value="2000" step="100">
+                <span id="ai-tokens-value">2000</span>
+            </div>
+        </div>
+        <div class="settings-group">
+            <div class="group-title">占卜解牌提示词</div>
+            <textarea id="ai-fortune-prompt" rows="4" placeholder="你是一位专业的塔罗牌和雷诺曼解读师..." style="width:100%; padding:8px; border-radius:8px; border:1px solid var(--border-color); background:var(--primary-bg); color:var(--text-primary); font-family:inherit; resize:vertical;"></textarea>
+            <p class="settings-hint">用于占卜功能的AI辅助解牌，单次对话无记忆。</p>
+        </div>
+        <div class="settings-group">
+            <button id="ai-settings-save" class="btn-primary" style="width:100%;">💾 保存设置</button>
+        </div>
+    </div>
+</div>
+
+<!-- AI对话视图 -->
+<div id="ai-chat-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">🤖 场外援助</span>
+        <button id="ai-clear-context" class="btn-secondary" style="font-size:11px; padding:4px 8px;">清除上下文</button>
+    </div>
+    <div class="ai-chat-container" id="ai-chat-container"></div>
+    <div id="ai-typing-indicator" class="typing-indicator" style="display:none;">
+        <span>AI</span> 正在思考<span class="typing-dots"></span>
+    </div>
+    <div class="input-area">
+        <textarea class="message-input" id="ai-message-input" rows="1" placeholder="向AI提问..."></textarea>
+        <button class="input-btn" id="ai-send-btn"><i class="fas fa-paper-plane"></i></button>
+    </div>
+</div>
+
+<!-- 报备视图 -->
+<div id="checkin-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">📋 报备</span>
+        <button id="checkin-library-btn" class="btn-secondary" style="font-size:12px; padding:4px 10px;">📝 活动库</button>
+    </div>
+    <div class="checkin-container">
+        <div class="checkin-date-nav">
+            <button id="checkin-prev-day"><i class="fas fa-chevron-left"></i></button>
+            <span id="checkin-date-label"></span>
+            <button id="checkin-next-day"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="checkin-timeline">
+            <div class="checkin-column" id="checkin-partner-col">
+                <div class="checkin-col-title">💕 对方</div>
+                <div id="checkin-partner-list" class="checkin-list"></div>
+            </div>
+            <div class="checkin-divider"></div>
+            <div class="checkin-column" id="checkin-me-col">
+                <div class="checkin-col-title">👤 我</div>
+                <div id="checkin-me-list" class="checkin-list"></div>
+                <button id="checkin-add-me" class="btn-secondary" style="width:100%; margin-top:8px; font-size:12px;">+ 添加活动</button>
+            </div>
+        </div>
+        <div class="checkin-endmsg" id="checkin-endmsg"></div>
+    </div>
+</div>
+
+<!-- 添加活动模态框 -->
+<div id="checkin-add-modal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:320px;">
+        <div class="modal-title"><i class="fas fa-clock"></i><span>添加活动</span></div>
+        <div style="margin-bottom:10px;">
+            <label style="font-size:13px;color:var(--text-secondary);">时间</label>
+            <input type="time" id="checkin-add-time" style="width:100%;padding:8px;border:1px solid var(--border-color);border-radius:12px;background:var(--primary-bg);color:var(--text-primary);">
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size:13px;color:var(--text-secondary);">活动内容</label>
+            <input type="text" id="checkin-add-activity" placeholder="做了什么..." style="width:100%;padding:8px;border:1px solid var(--border-color);border-radius:12px;background:var(--primary-bg);color:var(--text-primary);">
+        </div>
+        <div class="modal-buttons">
+            <button id="checkin-add-cancel" class="modal-btn modal-btn-secondary">取消</button>
+            <button id="checkin-add-save" class="modal-btn modal-btn-primary">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 活动库管理模态框 -->
+<div id="checkin-library-modal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:360px;">
+        <div class="modal-title"><i class="fas fa-list"></i><span>活动库管理</span></div>
+        <div style="margin-bottom:8px; font-size:12px; color:var(--text-secondary);">管理对方随机活动池，勾选适用的时间段</div>
+        <div id="checkin-library-list" style="max-height:50vh; overflow-y:auto; margin-bottom:12px;"></div>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <input type="text" id="checkin-library-new" placeholder="新活动名称" style="flex:1; padding:8px; border:1px solid var(--border-color); border-radius:12px; background:var(--primary-bg); color:var(--text-primary);">
+            <button id="checkin-library-add" class="btn-primary" style="font-size:12px;">添加</button>
+        </div>
+        <button id="checkin-library-close" class="modal-btn modal-btn-secondary" style="width:100%;">关闭</button>
+    </div>
+</div>
+
+<!-- 五子棋视图 -->
+<div id="gomoku-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">♟️ 五子棋</span>
+        <button id="gomoku-undo" class="btn-secondary" style="font-size:12px;padding:4px 10px;">↩ 悔棋</button>
+    </div>
+    <div class="gomoku-container">
+        <div class="gomoku-info">
+            <span>轮到：</span>
+            <span id="gomoku-turn" class="gomoku-turn black">⚫ 黑方</span>
+            <span style="margin-left:12px;">步数：</span>
+            <span id="gomoku-steps">0</span>
+        </div>
+        <div class="gomoku-canvas-wrap">
+            <canvas id="gomoku-canvas" width="480" height="480"></canvas>
+        </div>
+        <button id="gomoku-restart" class="btn-primary" style="width:200px; margin:12px auto 0;">🔄 重新开始</button>
+    </div>
+</div>
+
+<!-- 翻牌记忆视图 -->
+<div id="memory-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">🃏 翻牌记忆</span>
+    </div>
+    <div class="memory-container">
+        <div class="memory-info">
+            <span>⏱ <span id="memory-timer">00:00</span></span>
+            <span>步数：<span id="memory-steps">0</span></span>
+            <select id="memory-difficulty" style="margin-left:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--border-color);background:var(--primary-bg);color:var(--text-primary);font-size:12px;">
+                <option value="easy">4×3 (6对)</option>
+                <option value="medium" selected>4×4 (8对)</option>
+                <option value="hard">4×6 (12对)</option>
+            </select>
+            <button id="memory-restart" class="btn-secondary" style="font-size:12px;padding:4px 10px;">🔄 再来</button>
+        </div>
+        <div id="memory-grid" class="memory-grid"></div>
+    </div>
+</div>
+
+<!-- 图画板视图 -->
+<div id="draw-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">🎨 图画板</span>
+    </div>
+    <div class="draw-container">
+        <div class="draw-mode-tabs">
+            <button class="draw-mode-tab active" data-mode="random">🎲 随机生成</button>
+            <button class="draw-mode-tab" data-mode="draw">✏️ 手绘</button>
+        </div>
+        <div class="draw-canvas-wrapper">
+            <canvas id="draw-canvas" width="300" height="300"></canvas>
+        </div>
+        <!-- 随机生成控件 -->
+        <div class="draw-controls" id="draw-random-controls">
+            <div class="draw-slider-row">
+                <span>最小数量</span>
+                <input type="range" id="draw-min-count" min="1" max="50" value="5">
+                <span id="draw-min-value">5</span>
+            </div>
+            <div class="draw-slider-row">
+                <span>最大数量</span>
+                <input type="range" id="draw-max-count" min="1" max="80" value="20">
+                <span id="draw-max-value">20</span>
+            </div>
+            <button id="draw-generate-btn" class="btn-primary" style="width:100%; margin:8px 0;">🎲 随机生成</button>
+        </div>
+        <!-- 手绘控件 -->
+        <div class="draw-controls" id="draw-draw-controls" style="display:none;">
+            <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+                <input type="color" id="draw-color" value="#c5a47e" style="width:36px; height:36px; border:none; border-radius:50%; cursor:pointer;">
+                <input type="range" id="draw-brush-size" min="1" max="20" value="3" style="flex:1;">
+                <span id="draw-brush-value" style="font-size:12px;">3px</span>
+                <button id="draw-eraser-btn" class="btn-secondary" style="font-size:11px; padding:4px 8px;">🧹 橡皮</button>
+                <button id="draw-clear-btn" class="btn-secondary" style="font-size:11px; padding:4px 8px;">🗑️ 清除</button>
+            </div>
+        </div>
+        <button id="draw-send-btn" class="btn-secondary" style="width:100%;">📤 发送到聊天</button>
+    </div>
+</div>
+
+<!-- 心情日历视图 -->
+<div id="mood-view" class="view">
+    <div class="view-header">
+        <button class="view-back-btn" data-back><i class="fas fa-arrow-left"></i></button>
+        <span class="view-title">💕 心情日历</span>
+    </div>
+    <div class="mood-container">
+        <div class="mood-calendar-nav">
+            <button id="mood-prev-month"><i class="fas fa-chevron-left"></i></button>
+            <span id="mood-month-label">2026年6月</span>
+            <button id="mood-next-month"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="mood-legend">
+            <span>👤 我的心情</span>
+            <span>💕 对方心情</span>
+        </div>
+        <div class="mood-weekdays">
+            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+        </div>
+        <div id="mood-calendar-grid" class="mood-calendar-grid"></div>
+    </div>
+</div>
+
+<!-- 心情选择模态框 -->
+<div id="mood-picker-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 360px;">
+        <div class="modal-title">
+            <i class="fas fa-smile"></i>
+            <span>选择今天的心情</span>
+        </div>
+        <div id="mood-picker-date" style="text-align:center; margin-bottom:12px; color:var(--text-secondary); font-size:13px;"></div>
+        <div class="mood-preset-grid" id="mood-preset-grid">
+            <button class="mood-preset-btn" data-mood="😄 开心">😄 开心</button>
+            <button class="mood-preset-btn" data-mood="🥰 甜蜜">🥰 甜蜜</button>
+            <button class="mood-preset-btn" data-mood="😊 满足">😊 满足</button>
+            <button class="mood-preset-btn" data-mood="😴 疲惫">😴 疲惫</button>
+            <button class="mood-preset-btn" data-mood="😢 难过">😢 难过</button>
+            <button class="mood-preset-btn" data-mood="😤 生气">😤 生气</button>
+            <button class="mood-preset-btn" data-mood="🤔 思考">🤔 思考</button>
+            <button class="mood-preset-btn" data-mood="🌟 期待">🌟 期待</button>
+        </div>
+        <div style="margin-top:12px;">
+            <input type="text" id="mood-custom-input" placeholder="自定义心情..." style="width:100%; padding:8px 12px; border:1px solid var(--border-color); border-radius:20px; background:var(--primary-bg); color:var(--text-primary);">
+        </div>
+        <div class="modal-buttons" style="margin-top:16px;">
+            <button id="mood-picker-cancel" class="modal-btn modal-btn-secondary">取消</button>
+            <button id="mood-picker-save" class="modal-btn modal-btn-primary">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 视频通话模态框 -->
+<div id="call-modal" class="modal" style="display:none;">
+    <div class="call-overlay">
+        <button class="call-minimize-btn" id="call-minimize" title="最小化" style="display:none;"><i class="fas fa-minus"></i></button>
+        <div class="call-avatar-container">
+            <div class="call-avatar-ring" id="call-avatar-ring"></div>
+            <div class="call-avatar" id="call-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+        </div>
+        <div class="call-info">
+            <div class="call-name" id="call-name">对方</div>
+            <div class="call-status" id="call-status">正在呼叫...</div>
+            <div class="call-timer" id="call-timer" style="display:none;">00:00</div>
+        </div>
+        <div class="call-actions" id="call-actions-outgoing" style="display:none;">
+            <button class="call-btn-hangup" id="call-hangup-outgoing"><i class="fas fa-phone-slash"></i></button>
+        </div>
+        <div class="call-actions" id="call-actions-incoming" style="display:none;">
+            <button class="call-btn-answer" id="call-answer"><i class="fas fa-phone"></i></button>
+            <button class="call-btn-reject" id="call-reject"><i class="fas fa-phone-slash"></i></button>
+        </div>
+        <div class="call-actions" id="call-actions-connected" style="display:none;">
+            <button class="call-btn-hangup" id="call-hangup-connected"><i class="fas fa-phone-slash"></i></button>
+        </div>
+    </div>
+</div>
+
+<!-- 通话悬浮窗 -->
+<div id="call-float" class="call-float" style="display:none;">
+    <div class="call-float-avatar" id="call-float-avatar"><i class="fas fa-user-circle"></i></div>
+    <div class="call-float-info">
+        <div class="call-float-name">对方</div>
+        <div class="call-float-timer" id="call-float-timer">00:00</div>
+    </div>
+    <button class="call-float-hangup" id="call-float-hangup"><i class="fas fa-phone-slash"></i></button>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/view-manager.js"></script>
+<script src="js/sound-settings.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/replies.js"></script>
+<script src="js/multi-session.js"></script>
+<script src="js/music.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/appearance.js"></script>
+<script src="js/chat-settings.js"></script>
+<script src="js/daily-greeting.js"></script>
+<script src="js/data-manager.js"></script>
+<script src="js/other-settings.js"></script>
+<script src="js/sleep.js"></script>
+<script src="js/whisper.js"></script>
+<script src="js/envelope.js"></script>
+<script src="js/fortune.js"></script>
+<script src="js/decision.js"></script>
+<script src="js/mood-calendar.js"></script>
+<script src="js/anniversaries.js"></script>
+<script src="js/ai-settings.js"></script>
+<script src="js/ai-chat.js"></script>
+<script src="js/checkin.js"></script>
+<script src="js/gomoku.js"></script>
+<script src="js/memory-game.js"></script>
+<script src="js/draw-board.js"></script>
+<script src="js/app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+</body>
+</html>
