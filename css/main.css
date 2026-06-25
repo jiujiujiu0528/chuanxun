@@ -410,11 +410,15 @@ body.dark {
     letter-spacing: 1px;
 }
 
-.home-app-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
-    padding: 20px 20px 40px;
+.home-app-grid {                                                                                                      
+      display: grid;                                                                                                    
+      grid-template-columns: repeat(4, 1fr);                                                                            
+      gap: 20px;                                                                                                        
+      padding: 20px 16px 40px;                                                                                          
+      max-width: 480px;                                                                                                 
+      margin: 0 auto;                                                                                                   
+      justify-items: center;                                                                                            
+  }
 }
 .app-icon {
     display: flex;
