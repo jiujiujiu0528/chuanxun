@@ -233,11 +233,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
+        // Android TWA 修复：必须挂到 DOM 里 click 才能触发文件选择器
+        input.style.position = 'fixed';
+        input.style.top = '-9999px';
+        input.style.left = '-9999px';
+        input.style.visibility = 'hidden';
+        document.body.appendChild(input);
         input.onchange = async (e) => {
             const file = e.target.files[0];
-            if (!file) return;
+            if (!file) { document.body.removeChild(input); return; }
             if (file.size > 2 * 1024 * 1024) {
                 alert('图片不能超过 2MB');
+                document.body.removeChild(input);
                 return;
             }
             try {
@@ -246,8 +253,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 showNotification('头像已更新', 'success');
             } catch (err) {
                 console.error(err);
-                alert('图片处理失败');
+                // 裁剪失败时降级为直接读取原图
+                const reader = new FileReader();
+                reader.onload = ev => { saveAvatar(isPartner, ev.target.result); showNotification('头像已更新（未裁剪）', 'success'); };
+                reader.onerror = () => alert('图片读取失败');
+                reader.readAsDataURL(file);
             }
+            document.body.removeChild(input);
         };
         input.click();
     }
