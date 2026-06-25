@@ -3,8 +3,12 @@ function initAppearanceModule() {
     loadTheme();
     bindDarkModeToggle();
     loadFontSize();
+    loadFontColor();
+    loadSystemFont();
     bindThemeButtons();
     bindFontSizeSlider();
+    bindFontColor();
+    bindSystemFont();
     bindBubbleStyleButtons();
     bindChatBackground();
     loadIconSettings();
@@ -136,6 +140,53 @@ function loadFontSize() {
         if (slider) slider.value = saved;
         if (valueSpan) valueSpan.textContent = saved + 'px';
     }
+}
+
+// 字体颜色
+function loadFontColor() {
+    const saved = localStorage.getItem('font_color');
+    if (saved) {
+        document.documentElement.style.setProperty('--font-color', saved);
+        const picker = document.getElementById('font-color-picker');
+        if (picker) picker.value = saved;
+    }
+}
+function bindFontColor() {
+    const picker = document.getElementById('font-color-picker');
+    const resetBtn = document.getElementById('reset-font-color');
+    if (picker) picker.oninput = () => {
+        document.documentElement.style.setProperty('--font-color', picker.value);
+        localStorage.setItem('font_color', picker.value);
+    };
+    if (resetBtn) resetBtn.onclick = () => {
+        localStorage.removeItem('font_color');
+        document.documentElement.style.removeProperty('--font-color');
+        if (picker) picker.value = '#333333';
+        showNotification('字体颜色已恢复默认', 'info');
+    };
+}
+
+// 系统字体
+function loadSystemFont() {
+    const saved = localStorage.getItem('system_font');
+    const toggle = document.getElementById('system-font-toggle');
+    if (saved === 'true') {
+        document.documentElement.style.setProperty('--font-family', 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif');
+        if (toggle) toggle.checked = true;
+    }
+}
+function bindSystemFont() {
+    const toggle = document.getElementById('system-font-toggle');
+    if (!toggle) return;
+    toggle.onchange = () => {
+        if (toggle.checked) {
+            document.documentElement.style.setProperty('--font-family', 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif');
+            localStorage.setItem('system_font', 'true');
+        } else {
+            document.documentElement.style.removeProperty('--font-family');
+            localStorage.removeItem('system_font');
+        }
+    };
 }
 
 // 气泡样式
